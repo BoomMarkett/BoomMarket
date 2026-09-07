@@ -1589,6 +1589,13 @@ function mountGiftAnimations(container) {
 }
 
 
+// Единый формат отображения сумм GRAM по всему маркету (листинги, ордера,
+// трейды, история) — всегда один знак после запятой. Баланс — исключение,
+// у него отдельная логика с двумя знаками (см. updateBalanceUI).
+function formatGram(amount) {
+    return Number(amount).toFixed(1);
+}
+
 function formatAmount(amount) {
     const sign = amount > 0 ? '+' : '';
     return `${sign}${formatGram(amount)} 💎`;
