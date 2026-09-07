@@ -1339,6 +1339,7 @@ body {
     border-radius: 12px;
     flex-shrink: 0;
     overflow: hidden;
+    position: relative;
     background: #2c2c2e;
     display: flex;
     align-items: center;
