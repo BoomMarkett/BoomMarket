@@ -3133,6 +3133,74 @@ function fillListingSelect(selectEl, items, placeholder, labelFn) {
 // открывает чат и, для удобства, обновляет Хранилище по запросу. ===
 const createListingModal = document.getElementById('createListingModal');
 const addListingBtn = document.getElementById('addListingBtn');
+const adminWalletInfoBtn = document.getElementById('adminWalletInfoBtn');
+const adminMissingSlugBtn = document.getElementById('adminMissingSlugBtn');
+
+if (adminMissingSlugBtn) {
+    adminMissingSlugBtn.addEventListener('click', async () => {
+        if (!authToken) {
+            alert('Не удалось подтвердить личность. Попробуйте перезайти.');
+            return;
+        }
+
+        adminMissingSlugBtn.disabled = true;
+        try {
+            const res = await fetch(`${API_URL}/api/admin/gift-deposits-missing-slug`, {
+                headers: { 'Authorization': `Bearer ${authToken}` },
+            });
+            const data = await res.json();
+
+            if (!data.ok) {
+                alert(data.error || 'Доступ только для администратора');
+                return;
+            }
+
+            if (data.deposits.length === 0) {
+                alert('Всё в порядке — у всех депозитов подарков есть сохранённый slug, дозаполнять нечего.');
+                return;
+            }
+
+            const lines = data.deposits.map(d =>
+                `#${d.deposit_id} — ${d.collection_name || '?'} ${d.gift_number ? '#' + d.gift_number : ''} — владелец: @${d.username || d.tg_id} (статус лота: ${d.listing_status || '?'})`
+            );
+            alert(`Найдено без slug: ${data.deposits.length}\n\n${lines.join('\n')}`);
+        } catch (e) {
+            alert('Ошибка соединения с сервером');
+            console.error(e);
+        } finally {
+            adminMissingSlugBtn.disabled = false;
+        }
+    });
+}
+
+if (adminWalletInfoBtn) {
+    adminWalletInfoBtn.addEventListener('click', async () => {
+        if (!authToken) {
+            alert('Не удалось подтвердить личность. Попробуйте перезайти.');
+            return;
+        }
+
+        adminWalletInfoBtn.disabled = true;
+        try {
+            const res = await fetch(`${API_URL}/api/admin/wallet-info`, {
+                headers: { 'Authorization': `Bearer ${authToken}` },
+            });
+            const data = await res.json();
+
+            if (!data.ok) {
+                alert(data.error || 'Доступ только для администратора');
+                return;
+            }
+
+            alert(`Кошелёк для выводов:\n${data.address}\n\nБаланс: ${data.balanceTon} TON`);
+        } catch (e) {
+            alert('Ошибка соединения с сервером');
+            console.error(e);
+        } finally {
+            adminWalletInfoBtn.disabled = false;
+        }
+    });
+}
 const closeCreateListingModalBtn = document.getElementById('closeCreateListingModal');
 const depositNftOpenChatBtn = document.getElementById('depositNftOpenChatBtn');
 const depositNftUsernameEl = document.getElementById('depositNftUsername');
@@ -3439,9 +3507,39 @@ if (withdrawGiftBtn) {
             alert('Не удалось подтвердить личность. Попробуйте перезайти.');
             return;
         }
-        if (!confirm('Вывести этот подарок обратно в Telegram? Это необратимо.')) return;
 
         withdrawGiftBtn.disabled = true;
+
+        // Сначала узнаём комиссию (Telegram иногда берёт Stars за перевод
+        // подарка — конвертируем в GRAM и показываем ДО того, как человек
+        // подтвердит вывод, чтобы не списывать деньги без предупреждения).
+        let feeTon = 0;
+        try {
+            const quoteRes = await fetch(`${API_URL}/api/inventory/${currentRelistItemId}/withdraw-quote`, {
+                headers: { 'Authorization': `Bearer ${authToken}` },
+            });
+            const quoteData = await quoteRes.json();
+            if (!quoteData.ok) {
+                alert(quoteData.error || 'Не удалось узнать комиссию за вывод');
+                withdrawGiftBtn.disabled = false;
+                return;
+            }
+            feeTon = quoteData.feeTon || 0;
+        } catch (e) {
+            alert('Ошибка соединения с сервером');
+            console.error(e);
+            withdrawGiftBtn.disabled = false;
+            return;
+        }
+
+        const confirmMessage = feeTon > 0
+            ? `Вывести этот подарок обратно в Telegram? С баланса спишется комиссия Telegram за перевод: ${feeTon} GRAM. Это необратимо.`
+            : 'Вывести этот подарок обратно в Telegram? Это необратимо.';
+
+        if (!confirm(confirmMessage)) {
+            withdrawGiftBtn.disabled = false;
+            return;
+        }
 
         try {
             const res = await fetch(`${API_URL}/api/inventory/${currentRelistItemId}/withdraw-gift`, {
@@ -3455,7 +3553,11 @@ if (withdrawGiftBtn) {
                 return;
             }
 
-            alert('Подарок отправлен в Telegram!');
+            if (typeof data.balance === 'number') updateBalanceUI(data.balance);
+
+            alert(data.feeTon > 0
+                ? `Подарок отправлен в Telegram! Списана комиссия: ${data.feeTon} GRAM.`
+                : 'Подарок отправлен в Telegram!');
             relistModal.style.display = 'none';
             currentRelistItemId = null;
 
