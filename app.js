@@ -1086,7 +1086,6 @@ const quickOrderModal = document.getElementById('quickOrderModal');
 const closeQuickOrderModalBtn = document.getElementById('closeQuickOrderModal');
 const quickOrderImageWrap = document.getElementById('quickOrderImageWrap');
 const quickOrderImage = document.getElementById('quickOrderImage');
-const quickOrderAnimMount = document.getElementById('quickOrderAnimMount');
 const quickOrderTitle = document.getElementById('quickOrderTitle');
 const quickOrderNumber = document.getElementById('quickOrderNumber');
 const quickOrderCollection = document.getElementById('quickOrderCollection');
@@ -1109,7 +1108,7 @@ function openQuickOrderModal(item) {
 
     const image = item.model_icon || item.collection_image || '';
     quickOrderImageWrap.style.backgroundColor = item.backdrop_color || '#333';
-    setGiftDetailVisual(quickOrderImage, quickOrderAnimMount, item, image);
+    quickOrderImage.src = image;
     quickOrderTitle.textContent = item.collection_name;
     quickOrderNumber.textContent = `по трейтам как у #${item.gift_number}`;
     quickOrderCollection.textContent = item.collection_name;
@@ -1632,6 +1631,7 @@ let historyAllItems = [];
 let historyActiveFilter = 'all';
 
 function renderHistoryList(items) {
+    destroyGiftAnimations(historyList);
     historyList.innerHTML = '';
     historyById.clear();
 
@@ -1674,7 +1674,7 @@ function renderHistoryList(items) {
             const bg = item.backdrop_color || '#333';
             thumbHtml = `
                 <div class="history-thumb" style="background-color:${bg};">
-                    ${image ? `<img src="${image}" alt="">` : ''}
+                    ${giftVisualHtml(item, image, '', '')}
                 </div>`;
         } else {
             thumbHtml = `<div class="history-thumb is-icon">${historyTypeIcons[item.type] || '💎'}</div>`;
@@ -1705,6 +1705,7 @@ function renderHistoryList(items) {
 
         historyList.appendChild(li);
     });
+    mountGiftAnimations(historyList);
 }
 
 function applyHistoryFilter() {
@@ -1776,7 +1777,6 @@ const historyDetailModal = document.getElementById('historyDetailModal');
 const closeHistoryDetailBtn = document.getElementById('closeHistoryDetail');
 const historyDetailImageWrap = document.getElementById('historyDetailImageWrap');
 const historyDetailImage = document.getElementById('historyDetailImage');
-const historyDetailAnimMount = document.getElementById('historyDetailAnimMount');
 const historyDetailTitle = document.getElementById('historyDetailTitle');
 const historyDetailNumber = document.getElementById('historyDetailNumber');
 const historyDetailCollection = document.getElementById('historyDetailCollection');
@@ -1790,7 +1790,7 @@ const historyDetailAmount = document.getElementById('historyDetailAmount');
 function openHistoryDetail(item) {
     const image = item.model_image || item.collection_image || '';
     historyDetailImageWrap.style.backgroundColor = item.backdrop_color || '#333';
-    setGiftDetailVisual(historyDetailImage, historyDetailAnimMount, item, image);
+    historyDetailImage.src = image;
     historyDetailTitle.textContent = item.collection_name;
     historyDetailNumber.textContent = item.gift_number ? `#${item.gift_number}` : '';
     historyDetailCollection.textContent = item.collection_name || '—';
@@ -1852,6 +1852,7 @@ function orderCriteriaLabel(item) {
 }
 
 function renderOrdersList(container, cacheMap, items, { showCancel }) {
+    destroyGiftAnimations(container);
     container.innerHTML = '';
     cacheMap.clear();
 
@@ -1885,7 +1886,7 @@ function renderOrdersList(container, cacheMap, items, { showCancel }) {
 
         li.innerHTML = `
             <div class="history-thumb" style="background-color:${bg};">
-                ${image ? `<img src="${image}" alt="">` : ''}
+                ${giftVisualHtml({ collection_name: item.collection_name, gift_number: item.matched_gift_number }, image, '', '')}
             </div>
             <div class="history-info">
                 <div class="history-name">${item.collection_name}</div>
@@ -1897,6 +1898,7 @@ function renderOrdersList(container, cacheMap, items, { showCancel }) {
 
         container.appendChild(li);
     });
+    mountGiftAnimations(container);
 }
 
 // Счётчик "Ордера" на экране профиля — держим в актуальном состоянии
@@ -1970,6 +1972,7 @@ async function loadOrderHistory(opts = {}) {
 
 // === Предложения покупателей по МОИМ активным лотам ===
 function renderMyOffers(offers) {
+    destroyGiftAnimations(ordersOffersList);
     ordersOffersList.innerHTML = '';
     myOffersById.clear();
 
@@ -1990,7 +1993,7 @@ function renderMyOffers(offers) {
 
         li.innerHTML = `
             <div class="history-thumb" style="background-color:${bg};">
-                ${image ? `<img src="${image}" alt="">` : ''}
+                ${giftVisualHtml(offer, image, '', '')}
             </div>
             <div class="history-info">
                 <div class="history-name">${offer.collection_name} #${offer.gift_number}</div>
@@ -2005,6 +2008,7 @@ function renderMyOffers(offers) {
 
         ordersOffersList.appendChild(li);
     });
+    mountGiftAnimations(ordersOffersList);
 }
 
 async function loadMyOffers(opts = {}) {
@@ -2141,7 +2145,6 @@ const orderDetailModal = document.getElementById('orderDetailModal');
 const closeOrderDetailBtn = document.getElementById('closeOrderDetail');
 const orderDetailImageWrap = document.getElementById('orderDetailImageWrap');
 const orderDetailImage = document.getElementById('orderDetailImage');
-const orderDetailAnimMount = document.getElementById('orderDetailAnimMount');
 const orderDetailTitle = document.getElementById('orderDetailTitle');
 const orderDetailNumber = document.getElementById('orderDetailNumber');
 const orderDetailCollection = document.getElementById('orderDetailCollection');
@@ -2163,15 +2166,7 @@ function openOrderDetail(item) {
 
     const image = item.model_image || item.collection_image || '';
     orderDetailImageWrap.style.backgroundColor = item.backdrop_color || '#333';
-    // У ордера нет своего конкретного экземпляра, пока он не исполнен — для
-    // анимации нужен номер именно СОВПАВШЕГО подарка (matched_gift_number),
-    // а не gift_number (которого у ордера-заявки вообще нет).
-    setGiftDetailVisual(
-        orderDetailImage,
-        orderDetailAnimMount,
-        { collection_name: item.collection_name, gift_number: item.matched_gift_number },
-        image
-    );
+    orderDetailImage.src = image;
     orderDetailTitle.textContent = item.collection_name;
     orderDetailNumber.textContent = (item.status === 'filled' && item.matched_gift_number) ? `#${item.matched_gift_number}` : '';
     orderDetailCollection.textContent = item.collection_name || '—';
@@ -3912,6 +3907,7 @@ async function selectTradeTarget(user) {
 }
 
 function renderTradePickList(container, items, selectedSet) {
+    destroyGiftAnimations(container);
     container.innerHTML = '';
     if (!items || items.length === 0) {
         container.innerHTML = `<div class="empty-state">Хранилище пусто</div>`;
@@ -3925,7 +3921,7 @@ function renderTradePickList(container, items, selectedSet) {
         li.innerHTML = `
             <input type="checkbox" data-item-id="${item.id}" ${selectedSet.has(item.id) ? 'checked' : ''}>
             <div class="history-thumb" style="background-color:${bg};">
-                ${image ? `<img src="${image}" alt="">` : ''}
+                ${giftVisualHtml(item, image, '', '')}
             </div>
             <div class="history-info">
                 <div class="history-name">${item.collection_name}${item.gift_number ? ' #' + item.gift_number : ''}</div>
@@ -3944,6 +3940,7 @@ function renderTradePickList(container, items, selectedSet) {
         });
         container.appendChild(li);
     });
+    mountGiftAnimations(container);
 }
 
 async function loadTradeMyItems() {
@@ -4094,7 +4091,7 @@ function renderTradeSummaryRow(trade) {
     li.dataset.tradeId = trade.id;
     li.innerHTML = `
         <div class="history-thumb" style="background-color:${bg};">
-            ${thumbImage ? `<img src="${thumbImage}" alt="">` : ''}
+            ${thumbSource ? giftVisualHtml(thumbSource, thumbImage, '', '') : ''}
         </div>
         <div class="history-info">
             <div class="history-name">@${other ? (other.username || other.first_name || other.tg_id) : '—'}</div>
@@ -4124,6 +4121,7 @@ async function loadIncomingTrades(opts = {}) {
             return;
         }
         tradeIncomingCache.clear();
+        destroyGiftAnimations(tradeIncomingList);
         tradeIncomingList.innerHTML = '';
         if (!data.trades.length) {
             tradeIncomingList.innerHTML = `<div class="empty-state">Нет входящих предложений</div>`;
@@ -4133,6 +4131,7 @@ async function loadIncomingTrades(opts = {}) {
             tradeIncomingCache.set(String(trade.id), trade);
             tradeIncomingList.appendChild(renderTradeSummaryRow(trade));
         });
+        mountGiftAnimations(tradeIncomingList);
     } catch (e) {
         if (!opts.silent) tradeIncomingList.innerHTML = `<div class="empty-state">Ошибка соединения с сервером</div>`;
         console.error(e);
@@ -4154,6 +4153,7 @@ async function loadMyTrades(opts = {}) {
             return;
         }
         tradeMineCache.clear();
+        destroyGiftAnimations(tradeMineList);
         tradeMineList.innerHTML = '';
         if (!data.trades.length) {
             tradeMineList.innerHTML = `<div class="empty-state">Пока нет обменов</div>`;
@@ -4163,6 +4163,7 @@ async function loadMyTrades(opts = {}) {
             tradeMineCache.set(String(trade.id), trade);
             tradeMineList.appendChild(renderTradeSummaryRow(trade));
         });
+        mountGiftAnimations(tradeMineList);
     } catch (e) {
         if (!opts.silent) tradeMineList.innerHTML = `<div class="empty-state">Ошибка соединения с сервером</div>`;
         console.error(e);
@@ -4189,7 +4190,7 @@ function renderTradeItemRow(item) {
     li.className = 'history-row trade-item-row';
     li.innerHTML = `
         <div class="history-thumb" style="background-color:${bg};">
-            ${image ? `<img src="${image}" alt="">` : ''}
+            ${giftVisualHtml(item, image, '', '')}
         </div>
         <div class="history-info">
             <div class="history-name">${item.collection_name}${item.gift_number ? ' #' + item.gift_number : ''}</div>
@@ -4227,11 +4228,15 @@ function openTradeDetail(trade) {
         }
     }
 
+    destroyGiftAnimations(tradeDetailGiveList);
     tradeDetailGiveList.innerHTML = '';
     give.forEach(item => tradeDetailGiveList.appendChild(renderTradeItemRow(item)));
+    mountGiftAnimations(tradeDetailGiveList);
 
+    destroyGiftAnimations(tradeDetailGetList);
     tradeDetailGetList.innerHTML = '';
     get.forEach(item => tradeDetailGetList.appendChild(renderTradeItemRow(item)));
+    mountGiftAnimations(tradeDetailGetList);
 
     tradeDetailActions.innerHTML = '';
 
