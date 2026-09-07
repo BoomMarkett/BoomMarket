@@ -1086,6 +1086,7 @@ const quickOrderModal = document.getElementById('quickOrderModal');
 const closeQuickOrderModalBtn = document.getElementById('closeQuickOrderModal');
 const quickOrderImageWrap = document.getElementById('quickOrderImageWrap');
 const quickOrderImage = document.getElementById('quickOrderImage');
+const quickOrderAnimMount = document.getElementById('quickOrderAnimMount');
 const quickOrderTitle = document.getElementById('quickOrderTitle');
 const quickOrderNumber = document.getElementById('quickOrderNumber');
 const quickOrderCollection = document.getElementById('quickOrderCollection');
@@ -1108,7 +1109,7 @@ function openQuickOrderModal(item) {
 
     const image = item.model_icon || item.collection_image || '';
     quickOrderImageWrap.style.backgroundColor = item.backdrop_color || '#333';
-    quickOrderImage.src = image;
+    setGiftDetailVisual(quickOrderImage, quickOrderAnimMount, item, image);
     quickOrderTitle.textContent = item.collection_name;
     quickOrderNumber.textContent = `по трейтам как у #${item.gift_number}`;
     quickOrderCollection.textContent = item.collection_name;
@@ -1775,6 +1776,7 @@ const historyDetailModal = document.getElementById('historyDetailModal');
 const closeHistoryDetailBtn = document.getElementById('closeHistoryDetail');
 const historyDetailImageWrap = document.getElementById('historyDetailImageWrap');
 const historyDetailImage = document.getElementById('historyDetailImage');
+const historyDetailAnimMount = document.getElementById('historyDetailAnimMount');
 const historyDetailTitle = document.getElementById('historyDetailTitle');
 const historyDetailNumber = document.getElementById('historyDetailNumber');
 const historyDetailCollection = document.getElementById('historyDetailCollection');
@@ -1788,7 +1790,7 @@ const historyDetailAmount = document.getElementById('historyDetailAmount');
 function openHistoryDetail(item) {
     const image = item.model_image || item.collection_image || '';
     historyDetailImageWrap.style.backgroundColor = item.backdrop_color || '#333';
-    historyDetailImage.src = image;
+    setGiftDetailVisual(historyDetailImage, historyDetailAnimMount, item, image);
     historyDetailTitle.textContent = item.collection_name;
     historyDetailNumber.textContent = item.gift_number ? `#${item.gift_number}` : '';
     historyDetailCollection.textContent = item.collection_name || '—';
@@ -2139,6 +2141,7 @@ const orderDetailModal = document.getElementById('orderDetailModal');
 const closeOrderDetailBtn = document.getElementById('closeOrderDetail');
 const orderDetailImageWrap = document.getElementById('orderDetailImageWrap');
 const orderDetailImage = document.getElementById('orderDetailImage');
+const orderDetailAnimMount = document.getElementById('orderDetailAnimMount');
 const orderDetailTitle = document.getElementById('orderDetailTitle');
 const orderDetailNumber = document.getElementById('orderDetailNumber');
 const orderDetailCollection = document.getElementById('orderDetailCollection');
@@ -2160,7 +2163,15 @@ function openOrderDetail(item) {
 
     const image = item.model_image || item.collection_image || '';
     orderDetailImageWrap.style.backgroundColor = item.backdrop_color || '#333';
-    orderDetailImage.src = image;
+    // У ордера нет своего конкретного экземпляра, пока он не исполнен — для
+    // анимации нужен номер именно СОВПАВШЕГО подарка (matched_gift_number),
+    // а не gift_number (которого у ордера-заявки вообще нет).
+    setGiftDetailVisual(
+        orderDetailImage,
+        orderDetailAnimMount,
+        { collection_name: item.collection_name, gift_number: item.matched_gift_number },
+        image
+    );
     orderDetailTitle.textContent = item.collection_name;
     orderDetailNumber.textContent = (item.status === 'filled' && item.matched_gift_number) ? `#${item.matched_gift_number}` : '';
     orderDetailCollection.textContent = item.collection_name || '—';
