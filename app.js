@@ -724,6 +724,7 @@ async function loadListings() {
 }
 
 function renderGrid(listings) {
+    destroyGiftAnimations(grid);
     grid.innerHTML = '';
     listingsById.clear();
 
@@ -751,7 +752,7 @@ function renderGrid(listings) {
 
         card.innerHTML = `
             <div class="nft-image-container" style="background-color: ${bg};">
-                ${image ? `<img src="${image}" class="nft-img" alt="${item.collection_name}">` : ''}
+                ${giftVisualHtml(item, image, 'nft-img', item.collection_name)}
             </div>
             <div class="nft-info">
                 <div class="nft-title">${item.collection_name}</div>
@@ -767,6 +768,8 @@ function renderGrid(listings) {
         `;
         grid.appendChild(card);
     });
+
+    mountGiftAnimations(grid);
 }
 
 // Кэш последнего известного "лучшего предложения" по комбинации фильтров
@@ -981,6 +984,7 @@ const listingDetailModal = document.getElementById('listingDetailModal');
 const closeListingDetailBtn = document.getElementById('closeListingDetail');
 const listingDetailImageWrap = document.getElementById('listingDetailImageWrap');
 const listingDetailImage = document.getElementById('listingDetailImage');
+const listingDetailAnimMount = document.getElementById('listingDetailAnimMount');
 const listingDetailTitle = document.getElementById('listingDetailTitle');
 const listingDetailNumber = document.getElementById('listingDetailNumber');
 const listingDetailCollection = document.getElementById('listingDetailCollection');
@@ -1014,7 +1018,7 @@ function openListingDetail(item, opts = {}) {
     // коллекции вместо реальной картинки подарка.
     const image = item.model_icon || item.model_image || item.collection_image || '';
     listingDetailImageWrap.style.backgroundColor = item.backdrop_color || '#333';
-    listingDetailImage.src = image;
+    setGiftDetailVisual(listingDetailImage, listingDetailAnimMount, item, image);
     listingDetailTitle.textContent = item.collection_name;
     listingDetailNumber.textContent = `#${item.gift_number}`;
     listingDetailCollection.textContent = item.collection_name;
@@ -1455,12 +1459,135 @@ function formatHistoryDate(isoString) {
     return `${datePart} · ${timePart}`;
 }
 
-// Единый формат отображения сумм GRAM по всему маркету (листинги, ордера,
-// трейды, история) — всегда один знак после запятой. Баланс — исключение,
-// у него отдельная логика с двумя знаками (см. updateBalanceUI).
-function formatGram(amount) {
-    return Number(amount).toFixed(1);
+// =====================================================================
+// АНИМАЦИЯ ПОДАРКА (Lottie) — как в оригинальном Telegram, вместо статичной
+// картинки. Реальная анимация грузится лениво (только когда карточка
+// реально попадает в область видимости) через собственный прокси сервера
+// (см. /api/gift-animation/:slug в server.js) — если её там не нашлось
+// (кастомный/тестовый товар, которого нет на Fragment), молча остаётся
+// обычная статичная картинка, ничего не ломается.
+// =====================================================================
+
+/** Slug в формате Fragment: "название-без-пробелов-в-нижнем-регистре-номер",
+ * например "plushpepe-1". Возвращает null, если построить не из чего —
+ * тогда просто останется статичная картинка. */
+function buildGiftAnimationSlug(collectionName, giftNumber) {
+    if (!collectionName || !giftNumber) return null;
+    const clean = collectionName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    if (!clean) return null;
+    return `${clean}-${giftNumber}`;
 }
+
+/** HTML для картинки/анимации подарка — используется вместо голого <img>
+ * везде, где раньше было `<img src="${image}">`. Статичная картинка рисуется
+ * сразу (как и раньше — если анимация не подгрузится, ничего не сломается),
+ * поверх неё лениво накладывается место под анимацию. */
+function giftVisualHtml(item, image, imgClass, altText) {
+    const slug = buildGiftAnimationSlug(item?.collection_name, item?.gift_number);
+    const img = image ? `<img src="${image}" class="${imgClass}" alt="${altText || ''}">` : '';
+    const animMount = slug ? `<div class="nft-anim-mount" data-slug="${slug}"></div>` : '';
+    return img + animMount;
+}
+
+// Один общий IntersectionObserver на все карточки — не по одному на карточку,
+// это было бы избыточно при сотнях товаров в списке.
+let giftAnimObserver = null;
+function getGiftAnimObserver() {
+    if (!giftAnimObserver) {
+        giftAnimObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    startGiftAnimation(entry.target);
+                    giftAnimObserver.unobserve(entry.target);
+                }
+            });
+        }, { rootMargin: '200px' });
+    }
+    return giftAnimObserver;
+}
+
+function startGiftAnimation(mountEl) {
+    if (typeof lottie === 'undefined') return; // библиотека ещё не подгрузилась/не подключена
+    const slug = mountEl.dataset.slug;
+    if (!slug) return;
+
+    const anim = lottie.loadAnimation({
+        container: mountEl,
+        renderer: 'canvas',
+        loop: true,
+        autoplay: true,
+        path: `${API_URL}/api/gift-animation/${slug}`,
+    });
+
+    // Пока не подтвердилось, что реально загрузилось — картинку под ней не
+    // трогаем. Как только анимация готова, прячем статичную картинку и
+    // показываем canvas с анимацией.
+    anim.addEventListener('DOMLoaded', () => {
+        mountEl.classList.add('is-loaded');
+        const img = mountEl.previousElementSibling;
+        if (img && img.tagName === 'IMG') img.style.visibility = 'hidden';
+    });
+
+    // Такого подарка нет на Fragment (кастомный товар) или сеть подвела —
+    // просто убираем пустой контейнер, статичная картинка как была, так и
+    // останется видна.
+    anim.addEventListener('data_failed', () => {
+        anim.destroy();
+        mountEl.remove();
+    });
+
+    mountEl._lottieAnim = anim;
+}
+
+/** Для модалок с ОДНИМ товаром (детали лота, "Выставить на продажу" и т.п.),
+ * где картинка и точка монтажа анимации — фиксированные элементы, которые
+ * переиспользуются при каждом новом открытии (а не создаются заново, как в
+ * сетках). Лениво через observer грузить тут смысла нет — модалка и так уже
+ * открыта и видна, значит грузим сразу. */
+function setGiftDetailVisual(imgEl, mountEl, item, imageUrl) {
+    if (mountEl._lottieAnim) {
+        mountEl._lottieAnim.destroy();
+        delete mountEl._lottieAnim;
+    }
+    mountEl.innerHTML = '';
+    mountEl.classList.remove('is-loaded');
+
+    imgEl.src = imageUrl;
+    imgEl.style.visibility = 'visible';
+
+    const slug = buildGiftAnimationSlug(item?.collection_name, item?.gift_number);
+    if (!slug) return;
+    mountEl.dataset.slug = slug;
+    startGiftAnimation(mountEl);
+}
+
+/** Вызывать ПЕРЕД тем, как очистить container (`container.innerHTML = ''`) —
+ * сетки маркета/хранилища перерисовываются целиком каждые несколько секунд
+ * фоновым опросом, и без явной остановки старые canvas-анимации продолжали
+ * бы работать в фоне (requestAnimationFrame не останавливается сам по себе
+ * только от удаления DOM-узла) — копящаяся утечка памяти/CPU. */
+function destroyGiftAnimations(container) {
+    if (!container) return;
+    const observer = getGiftAnimObserver();
+
+    container.querySelectorAll('.nft-anim-mount').forEach(mountEl => {
+        observer.unobserve(mountEl);
+        if (mountEl._lottieAnim) {
+            mountEl._lottieAnim.destroy();
+            delete mountEl._lottieAnim;
+        }
+    });
+}
+
+/** Вызывать ПОСЛЕ того, как в container отрисованы новые карточки с
+ * `.nft-anim-mount` — начинает следить за их видимостью и запускает
+ * анимацию, когда карточка реально попадает на экран. */
+function mountGiftAnimations(container) {
+    if (!container) return;
+    const observer = getGiftAnimObserver();
+    container.querySelectorAll('.nft-anim-mount').forEach(mountEl => observer.observe(mountEl));
+}
+
 
 function formatAmount(amount) {
     const sign = amount > 0 ? '+' : '';
@@ -3342,6 +3469,7 @@ function getStorageItemBestRarity(item) {
 }
 
 function renderStorageGrid(items, isTrulyEmpty) {
+    destroyGiftAnimations(storageGrid);
     storageGrid.innerHTML = '';
     storageItemsById.clear();
 
@@ -3389,7 +3517,7 @@ function renderStorageGrid(items, isTrulyEmpty) {
         card.innerHTML = `
             <div class="nft-image-container" style="background-color: ${bg};">
                 ${rarityBadgeHtml}
-                ${image ? `<img src="${image}" class="nft-img" alt="${item.collection_name}">` : ''}
+                ${giftVisualHtml(item, image, 'nft-img', item.collection_name)}
             </div>
             <div class="nft-info">
                 <div class="nft-title">${item.collection_name}</div>
@@ -3398,6 +3526,8 @@ function renderStorageGrid(items, isTrulyEmpty) {
         `;
         storageGrid.appendChild(card);
     });
+
+    mountGiftAnimations(storageGrid);
 }
 
 if (storageGrid) {
@@ -3424,6 +3554,7 @@ const relistModal = document.getElementById('relistModal');
 const closeRelistModalBtn = document.getElementById('closeRelistModal');
 const relistImageWrap = document.getElementById('relistImageWrap');
 const relistImage = document.getElementById('relistImage');
+const relistAnimMount = document.getElementById('relistAnimMount');
 const relistTitle = document.getElementById('relistTitle');
 const relistNumber = document.getElementById('relistNumber');
 const relistCollection = document.getElementById('relistCollection');
@@ -3440,7 +3571,7 @@ function openRelistModal(item) {
 
     const image = item.model_icon || item.collection_image || '';
     relistImageWrap.style.backgroundColor = item.backdrop_color || '#333';
-    relistImage.src = image;
+    setGiftDetailVisual(relistImage, relistAnimMount, item, image);
     relistTitle.textContent = item.collection_name;
     relistNumber.textContent = `#${item.gift_number}`;
     relistCollection.textContent = item.collection_name;
