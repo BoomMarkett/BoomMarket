@@ -2742,6 +2742,14 @@ async function authenticateWithBackend(initData) {
         if (adminPanelBtn) {
             adminPanelBtn.style.display = data.user.isAdmin ? '' : 'none';
         }
+        // То же самое для служебных диагностических кнопок (адрес кошелька,
+        // проверка slug) — обычным пользователям они не нужны и не сработают.
+        if (adminWalletInfoBtn) {
+            adminWalletInfoBtn.style.display = data.user.isAdmin ? '' : 'none';
+        }
+        if (adminMissingSlugBtn) {
+            adminMissingSlugBtn.style.display = data.user.isAdmin ? '' : 'none';
+        }
 
         console.log('Авторизован как:', data.user.username || data.user.first_name);
     } catch (e) {
