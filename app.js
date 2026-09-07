@@ -1086,6 +1086,7 @@ const quickOrderModal = document.getElementById('quickOrderModal');
 const closeQuickOrderModalBtn = document.getElementById('closeQuickOrderModal');
 const quickOrderImageWrap = document.getElementById('quickOrderImageWrap');
 const quickOrderImage = document.getElementById('quickOrderImage');
+const quickOrderAnimMount = document.getElementById('quickOrderAnimMount');
 const quickOrderTitle = document.getElementById('quickOrderTitle');
 const quickOrderNumber = document.getElementById('quickOrderNumber');
 const quickOrderCollection = document.getElementById('quickOrderCollection');
@@ -1108,7 +1109,12 @@ function openQuickOrderModal(item) {
 
     const image = item.model_icon || item.collection_image || '';
     quickOrderImageWrap.style.backgroundColor = item.backdrop_color || '#333';
-    quickOrderImage.src = image;
+    // Открывается по клику на РЕАЛЬНЫЙ существующий подарок (просто ищем
+    // "такие же по трейтам"), поэтому у него есть настоящий gift_number —
+    // используем ту же функцию, что и остальные детальные модалки, чтобы
+    // подключить анимацию конкретно ЭТОГО экземпляра, а не только статичный
+    // цвет фона (без этого раньше показывался пустой цветной прямоугольник).
+    setGiftDetailVisual(quickOrderImage, quickOrderAnimMount, item, image);
     quickOrderTitle.textContent = item.collection_name;
     quickOrderNumber.textContent = `по трейтам как у #${item.gift_number}`;
     quickOrderCollection.textContent = item.collection_name;
