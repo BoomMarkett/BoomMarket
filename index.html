@@ -1154,6 +1154,14 @@
         </header>
         <div class="profile-content">
             <div class="section-title">АДМИН-КОНСОЛЬ</div>
+
+            <!-- Поиск пользователя по username — баланс, хранилище, лоты, история -->
+            <div class="admin-user-search">
+                <input type="text" id="adminUserSearchInput" placeholder="Username пользователя (без @)">
+                <button class="action-btn admin-user-search-btn" id="adminUserSearchBtn">Найти</button>
+            </div>
+            <div id="adminUserResult" class="admin-user-result" style="display:none;"></div>
+
             <div class="admin-stats-grid" id="adminStatsGrid">
                 <div class="admin-stat-card">
                     <div class="admin-stat-icon">🟢</div>

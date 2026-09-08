@@ -4664,3 +4664,101 @@ body {
     line-height: 1.4;
     text-align: center;
 }
+
+/* Поиск пользователя в админ-панели */
+.admin-user-search {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.admin-user-search input {
+    flex: 1;
+    background: #1c1c1e;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 14px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.admin-user-search-btn {
+    width: auto;
+    padding: 0 20px;
+    flex-direction: row;
+}
+
+.admin-user-result {
+    background: #1c1c1e;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.admin-user-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.admin-user-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #333;
+    object-fit: cover;
+}
+
+.admin-user-name {
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.admin-user-username {
+    color: #8e8e93;
+    font-size: 13px;
+}
+
+.admin-user-balance {
+    margin-left: auto;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.admin-user-section-title {
+    font-size: 12px;
+    color: #8e8e93;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 16px 0 8px;
+}
+
+.admin-user-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 8px;
+}
+
+.admin-user-mini-item {
+    background: #2c2c2e;
+    border-radius: 10px;
+    padding: 6px;
+    text-align: center;
+}
+
+.admin-user-mini-item img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 4px;
+}
+
+.admin-user-mini-item span {
+    font-size: 10px;
+    color: #8e8e93;
+    display: block;
+}

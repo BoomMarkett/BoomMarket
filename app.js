@@ -261,6 +261,107 @@ if (adminRefreshBtn) {
     });
 }
 
+// === Поиск пользователя по username в админ-панели ===
+const adminUserSearchInput = document.getElementById('adminUserSearchInput');
+const adminUserSearchBtn = document.getElementById('adminUserSearchBtn');
+const adminUserResult = document.getElementById('adminUserResult');
+
+async function runAdminUserSearch() {
+    if (!authToken || !adminUserSearchInput || !adminUserResult) return;
+
+    const username = adminUserSearchInput.value.trim().replace(/^@/, '');
+    if (!username) return;
+
+    adminUserResult.style.display = 'block';
+    adminUserResult.innerHTML = `<div class="empty-state">Ищу...</div>`;
+
+    try {
+        const res = await fetch(`${API_URL}/api/admin/user/${encodeURIComponent(username)}`, {
+            headers: { 'Authorization': `Bearer ${authToken}` },
+        });
+        const data = await res.json();
+
+        if (!data.ok) {
+            adminUserResult.innerHTML = `<div class="empty-state">${data.error || 'Пользователь не найден'}</div>`;
+            return;
+        }
+
+        renderAdminUserResult(data);
+    } catch (e) {
+        console.error('Не удалось найти пользователя:', e);
+        adminUserResult.innerHTML = `<div class="empty-state">Ошибка соединения с сервером</div>`;
+    }
+}
+
+function renderAdminUserMiniGrid(items, emptyText) {
+    if (!items || items.length === 0) {
+        return `<div class="empty-state">${emptyText}</div>`;
+    }
+    return `
+        <div class="admin-user-mini-grid">
+            ${items.map(item => {
+                const image = item.model_icon || item.collection_image || '';
+                return `
+                    <div class="admin-user-mini-item">
+                        ${image ? `<img src="${image}" alt="${item.collection_name}">` : ''}
+                        <span>#${item.gift_number}</span>
+                        <span>💎 ${formatGram(item.price)}</span>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+function renderAdminUserResult(data) {
+    const { user, inventory, activeListings, transactions } = data;
+
+    const avatar = user.photo_url
+        ? `<img class="admin-user-avatar" src="${user.photo_url}" alt="">`
+        : `<div class="admin-user-avatar"></div>`;
+
+    const transactionsHtml = (transactions && transactions.length)
+        ? transactions.slice(0, 20).map(t => `
+            <li class="history-row">
+                <div class="history-info">
+                    <div class="history-name">${t.type} ${t.collection_name ? `· ${t.collection_name} #${t.gift_number ?? ''}` : ''}</div>
+                    <div class="history-meta">${formatHistoryDate(t.created_at)}</div>
+                </div>
+                <div class="history-sum ${t.amount > 0 ? '' : 'negative'}">${formatAmount(t.amount)}</div>
+            </li>
+        `).join('')
+        : `<li class="empty-state">Операций ещё не было</li>`;
+
+    adminUserResult.innerHTML = `
+        <div class="admin-user-header">
+            ${avatar}
+            <div>
+                <div class="admin-user-name">${user.first_name || ''} ${user.last_name || ''}</div>
+                <div class="admin-user-username">@${user.username}</div>
+            </div>
+            <div class="admin-user-balance">💎 ${formatGram(user.balance)}</div>
+        </div>
+
+        <div class="admin-user-section-title">В хранилище (${inventory.length})</div>
+        ${renderAdminUserMiniGrid(inventory, 'Хранилище пусто')}
+
+        <div class="admin-user-section-title">На продаже (${activeListings.length})</div>
+        ${renderAdminUserMiniGrid(activeListings, 'Нет активных лотов')}
+
+        <div class="admin-user-section-title">История операций</div>
+        <ul class="history-list">${transactionsHtml}</ul>
+    `;
+}
+
+if (adminUserSearchBtn) {
+    adminUserSearchBtn.addEventListener('click', runAdminUserSearch);
+}
+if (adminUserSearchInput) {
+    adminUserSearchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') runAdminUserSearch();
+    });
+}
+
 async function loadAdminStats() {
     if (!authToken) return;
     const grid = document.getElementById('adminStatsGrid');
