@@ -1,6 +1,23 @@
 // === Адрес бэкенда на Railway ===
 const API_URL = 'https://boom-backend-production-dc56.up.railway.app';
 
+// Экранирует пользовательский текст перед вставкой в innerHTML — обязательно
+// для имени/фамилии из Telegram (first_name/last_name): в отличие от
+// username, Telegram НЕ ограничивает их безопасным набором символов, там
+// может быть что угодно, включая HTML/скрипты. Без экранирования человек мог
+// бы вписать себе в имя профиля <img onerror=...> и выполнить произвольный
+// JS в приложении у любого, кто просто увидит его имя в списке (трейды,
+// поиск пользователя и т.п.) — классический хранимый XSS.
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 const grid = document.getElementById('marketGrid');
 const searchInput = document.getElementById('searchInput');
 const sortTriggerBtn = document.getElementById('sortTriggerBtn');
@@ -4021,8 +4038,8 @@ function renderTradeFoundUsers(users) {
         row.className = 'trade-found-row';
         const displayName = [u.first_name, u.last_name].filter(Boolean).join(' ');
         row.innerHTML = `
-            <img class="trade-found-avatar" src="${u.photo_url || ''}" alt="">
-            <div class="trade-found-name">${displayName ? displayName + ' · ' : ''}@${u.username}</div>
+            <img class="trade-found-avatar" src="${escapeHtml(u.photo_url || '')}" alt="">
+            <div class="trade-found-name">${displayName ? escapeHtml(displayName) + ' · ' : ''}@${escapeHtml(u.username)}</div>
             <span>›</span>
         `;
         row.addEventListener('click', () => selectTradeTarget(u));
@@ -4036,7 +4053,7 @@ async function selectTradeTarget(user) {
     tradeTheirSelected.clear();
     tradeFoundUsers.innerHTML = '';
     tradeRecipientInput.value = '';
-    tradeSelectedUserBox.innerHTML = `Обмен с <b>@${user.username}</b>`;
+    tradeSelectedUserBox.innerHTML = `Обмен с <b>@${escapeHtml(user.username)}</b>`;
     tradeSelectionArea.style.display = '';
     tradeTheirItemsTitle.textContent = `ПРЕДМЕТЫ @${user.username}`;
     await Promise.all([loadTradeMyItems(), loadTradeTheirItems()]);
@@ -4230,7 +4247,7 @@ function renderTradeSummaryRow(trade) {
             ${thumbSource ? giftVisualHtml(thumbSource, thumbImage, '', '') : ''}
         </div>
         <div class="history-info">
-            <div class="history-name">@${other ? (other.username || other.first_name || other.tg_id) : '—'}</div>
+            <div class="history-name">@${other ? escapeHtml(other.username || other.first_name || other.tg_id) : '—'}</div>
             <div class="history-meta">Отдаёте ${give.length} · получаете ${get.length}${topupText}</div>
             <div class="history-meta">${formatHistoryDate(trade.created_at)}</div>
         </div>
