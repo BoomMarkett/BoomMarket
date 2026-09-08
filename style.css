@@ -4616,3 +4616,53 @@ body {
     font-size: 11px;
     color: #8e8e93;
 }
+
+.admin-payout-box {
+    background: linear-gradient(160deg, #1f2a1f 0%, #17171a 100%);
+    border: 1px solid rgba(52, 199, 89, 0.25);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 24px;
+}
+
+.admin-payout-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.admin-payout-label {
+    font-size: 13px;
+    color: #8e8e93;
+}
+
+.admin-payout-value {
+    font-size: 18px;
+    font-weight: 800;
+    color: #34c759;
+}
+
+.admin-payout-btn {
+    width: 100%;
+    flex-direction: row;
+    background: linear-gradient(135deg, #34c759 0%, #248a3d 100%);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    border: none;
+    padding: 13px 0;
+    border-radius: 12px;
+}
+
+.admin-payout-btn:disabled {
+    opacity: 0.6;
+}
+
+.admin-payout-hint {
+    font-size: 11px;
+    color: #8e8e93;
+    margin-top: 10px;
+    line-height: 1.4;
+    text-align: center;
+}

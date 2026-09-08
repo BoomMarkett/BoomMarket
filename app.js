@@ -311,32 +311,96 @@ async function loadAdminRevenue() {
             return;
         }
 
-        const { totals, bySource } = data.revenue;
+        const { totals, bySource, availableToWithdraw } = data.revenue;
         const setVal = (id, value) => {
             const el = document.getElementById(id);
             if (el) el.textContent = value;
         };
         setVal('adminRevenue24h', `💎 ${formatGram(totals.last24h)}`);
         setVal('adminRevenueAllTime', `💎 ${formatGram(totals.allTime)}`);
+        setVal('adminAvailablePayout', `💎 ${formatGram(availableToWithdraw)}`);
 
         if (bySource.length === 0) {
             breakdownEl.innerHTML = `<div class="empty-state">Пока нет данных — прибыль начнёт копиться по мере первых сделок и игр</div>`;
-            return;
+        } else {
+            breakdownEl.innerHTML = bySource.map(row => `
+                <div class="admin-revenue-row">
+                    <span class="admin-revenue-row-label">${ADMIN_REVENUE_SOURCE_LABELS[row.source] || row.source}</span>
+                    <span class="admin-revenue-row-values">
+                        <span class="admin-revenue-row-24h ${row.last24h >= 0 ? 'positive' : 'negative'}">${formatAmount(row.last24h)}</span>
+                        <span class="admin-revenue-row-all">всего: 💎 ${formatGram(row.allTime)}</span>
+                    </span>
+                </div>
+            `).join('');
         }
 
-        breakdownEl.innerHTML = bySource.map(row => `
-            <div class="admin-revenue-row">
-                <span class="admin-revenue-row-label">${ADMIN_REVENUE_SOURCE_LABELS[row.source] || row.source}</span>
-                <span class="admin-revenue-row-values">
-                    <span class="admin-revenue-row-24h ${row.last24h >= 0 ? 'positive' : 'negative'}">${formatAmount(row.last24h)}</span>
-                    <span class="admin-revenue-row-all">всего: 💎 ${formatGram(row.allTime)}</span>
-                </span>
-            </div>
-        `).join('');
+        renderAdminPayoutsList(data.payouts || []);
     } catch (e) {
         console.error('Не удалось загрузить прибыль площадки:', e);
         breakdownEl.innerHTML = `<div class="empty-state">Ошибка соединения с сервером</div>`;
     }
+}
+
+const ADMIN_PAYOUT_STATUS_LABELS = {
+    pending: '⏳ Отправляется',
+    completed: '✅ Выведено',
+    needs_review: '⚠️ Требует проверки',
+    failed: '❌ Не удалось',
+};
+
+function renderAdminPayoutsList(payouts) {
+    const list = document.getElementById('adminPayoutsList');
+    if (!list) return;
+
+    if (!payouts.length) {
+        list.innerHTML = `<li class="empty-state">Выводов прибыли ещё не было</li>`;
+        return;
+    }
+
+    list.innerHTML = payouts.map(p => `
+        <li class="history-row">
+            <div class="history-info">
+                <div class="history-name">💎 ${formatGram(p.amount)}</div>
+                <div class="history-meta">${formatHistoryDate(p.created_at)}</div>
+            </div>
+            <div class="order-row-status is-${p.status === 'completed' ? 'active' : p.status === 'failed' ? 'cancelled' : 'pending'}">
+                ${ADMIN_PAYOUT_STATUS_LABELS[p.status] || p.status}
+            </div>
+        </li>
+    `).join('');
+}
+
+const adminWithdrawProfitBtn = document.getElementById('adminWithdrawProfitBtn');
+if (adminWithdrawProfitBtn) {
+    adminWithdrawProfitBtn.addEventListener('click', async () => {
+        if (!authToken) return;
+        if (!confirm('Вывести всю накопленную прибыль на кошелёк владельца одним переводом?')) return;
+
+        adminWithdrawProfitBtn.disabled = true;
+        const originalText = adminWithdrawProfitBtn.textContent;
+        adminWithdrawProfitBtn.textContent = 'Отправка...';
+
+        try {
+            const res = await fetch(`${API_URL}/api/admin/withdraw-profit`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${authToken}` },
+            });
+            const data = await res.json();
+
+            if (!data.ok) {
+                alert(data.error || 'Не удалось вывести прибыль');
+            } else {
+                alert(`Выведено 💎 ${formatGram(data.amount)} на кошелёк владельца`);
+            }
+        } catch (e) {
+            alert('Ошибка соединения с сервером');
+            console.error(e);
+        } finally {
+            adminWithdrawProfitBtn.disabled = false;
+            adminWithdrawProfitBtn.textContent = originalText;
+            loadAdminRevenue();
+        }
+    });
 }
 
 // Игровой хаб в профиле — "Слоты" и "Рулетка" ведут в реальные игры,
