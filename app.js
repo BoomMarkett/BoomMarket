@@ -98,6 +98,7 @@ function showScreen(name) {
     }
     if (name === 'admin') {
         loadAdminStats();
+        loadAdminRevenue();
     }
 }
 
@@ -133,6 +134,7 @@ const ADMIN_STATS_POLL_INTERVAL_MS = 10000;
 setInterval(() => {
     if (currentScreenName === 'admin' && document.visibilityState === 'visible') {
         loadAdminStats();
+        loadAdminRevenue();
     }
 }, ADMIN_STATS_POLL_INTERVAL_MS);
 
@@ -236,7 +238,10 @@ if (adminBackBtn) {
 }
 const adminRefreshBtn = document.getElementById('adminRefreshBtn');
 if (adminRefreshBtn) {
-    adminRefreshBtn.addEventListener('click', () => loadAdminStats());
+    adminRefreshBtn.addEventListener('click', () => {
+        loadAdminStats();
+        loadAdminRevenue();
+    });
 }
 
 async function loadAdminStats() {
@@ -270,6 +275,67 @@ async function loadAdminStats() {
     } catch (e) {
         console.error('Не удалось загрузить админ-статистику:', e);
         grid.innerHTML = `<div class="empty-state">Ошибка соединения с сервером</div>`;
+    }
+}
+
+// Человекочитаемые подписи источников прибыли — ключи ровно те, что пишет
+// recordRevenue() на сервере (см. server.js/database.js).
+const ADMIN_REVENUE_SOURCE_LABELS = {
+    market: '🏪 Маркет (1.5%)',
+    trade: '🔁 Трейд (комиссия)',
+    gift_withdraw: '🎁 Вывод подарков',
+    game_slots: '🎰 Слоты',
+    game_roulette: '🎡 Рулетка',
+    game_bomber: '💣 Бомбер',
+    game_tower: '🗼 Башня',
+    game_dice: '🎲 Кости',
+    game_plinko: '🎯 Плинко',
+};
+
+// Реальная прибыль площадки — отдельно от "Баланс всех пользователей" выше
+// (тот показывает чужие деньги на кошельке, этот — сколько площадка реально
+// заработала: комиссии + чистый доход игр). См. /api/admin/revenue.
+async function loadAdminRevenue() {
+    if (!authToken) return;
+    const breakdownEl = document.getElementById('adminRevenueBreakdown');
+    if (!breakdownEl) return;
+
+    try {
+        const res = await fetch(`${API_URL}/api/admin/revenue`, {
+            headers: { 'Authorization': `Bearer ${authToken}` },
+        });
+        const data = await res.json();
+
+        if (!data.ok) {
+            breakdownEl.innerHTML = `<div class="empty-state">${data.error || 'Не удалось загрузить прибыль'}</div>`;
+            return;
+        }
+
+        const { totals, bySource } = data.revenue;
+        const setVal = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        };
+        setVal('adminRevenue24h', `💎 ${formatGram(totals.last24h)}`);
+        setVal('adminRevenueAllTime', `💎 ${formatGram(totals.allTime)}`);
+
+        if (bySource.length === 0) {
+            breakdownEl.innerHTML = `<div class="empty-state">Пока нет данных — прибыль начнёт копиться по мере первых сделок и игр</div>`;
+            return;
+        }
+
+        breakdownEl.innerHTML = bySource.map(row => `
+            <div class="admin-revenue-row">
+                <span class="admin-revenue-row-label">${ADMIN_REVENUE_SOURCE_LABELS[row.source] || row.source}</span>
+                <span class="admin-revenue-row-values">
+                    <span class="admin-revenue-row-24h ${row.last24h >= 0 ? 'positive' : 'negative'}">${formatAmount(row.last24h)}</span>
+                    <span class="admin-revenue-row-all">всего: 💎 ${formatGram(row.allTime)}</span>
+                </span>
+            </div>
+        `).join('');
+    } catch (e) {
+        console.error('Не удалось загрузить прибыль площадки:', e);
+        breakdownEl.innerHTML = `<div class="empty-state">Ошибка соединения с сервером</div>`;
     }
 }
 

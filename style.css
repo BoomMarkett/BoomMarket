@@ -4554,3 +4554,65 @@ body {
 .deposit-nft-refresh-btn:active .deposit-nft-refresh-icon {
     transform: rotate(180deg);
 }
+
+/* =====================================================================
+   ПРИБЫЛЬ ПЛОЩАДКИ (adminScreen) — карточки "за 24ч/всего" + разбивка
+   по источникам. Переиспользует .admin-stat-card/.admin-stats-grid.
+   ===================================================================== */
+
+.admin-revenue-title {
+    margin-top: 4px;
+}
+
+.admin-revenue-card .admin-stat-value {
+    color: #34c759;
+}
+
+.admin-revenue-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.admin-revenue-row {
+    background: linear-gradient(160deg, #1f1f22 0%, #17171a 100%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.admin-revenue-row-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e6e6e8;
+}
+
+.admin-revenue-row-values {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.admin-revenue-row-24h {
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.admin-revenue-row-24h.positive {
+    color: #34c759;
+}
+
+.admin-revenue-row-24h.negative {
+    color: #ff453a;
+}
+
+.admin-revenue-row-all {
+    font-size: 11px;
+    color: #8e8e93;
+}

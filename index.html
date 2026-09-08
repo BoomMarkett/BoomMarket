@@ -1186,6 +1186,26 @@
                     <div class="admin-stat-label">Всего NFT в системе (шт.)</div>
                 </div>
             </div>
+
+            <!-- Реальная прибыль площадки — отдельно от баланса пользователей
+                 (тот показывает, сколько денег на кошельке ЧУЖИЕ, этот —
+                 сколько РЕАЛЬНО заработано: комиссии + чистый доход игр). -->
+            <div class="section-title admin-revenue-title">ПРИБЫЛЬ ПЛОЩАДКИ</div>
+            <div class="admin-stats-grid" id="adminRevenueTotals">
+                <div class="admin-stat-card admin-revenue-card">
+                    <div class="admin-stat-icon">📈</div>
+                    <div class="admin-stat-value" id="adminRevenue24h">—</div>
+                    <div class="admin-stat-label">Заработано за 24ч</div>
+                </div>
+                <div class="admin-stat-card admin-revenue-card">
+                    <div class="admin-stat-icon">🏦</div>
+                    <div class="admin-stat-value" id="adminRevenueAllTime">—</div>
+                    <div class="admin-stat-label">Заработано за всё время</div>
+                </div>
+            </div>
+            <div class="admin-revenue-breakdown" id="adminRevenueBreakdown">
+                <div class="empty-state">Загрузка...</div>
+            </div>
         </div>
     </div>
 
