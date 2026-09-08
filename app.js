@@ -1671,11 +1671,11 @@ function startGiftAnimation(mountEl) {
         autoplay: true,
         path: `${API_URL}/api/gift-animation/${slug}`,
         rendererSettings: {
-            // 'slice' — тот же эффект, что object-fit: cover у обычной <img>:
-            // анимация заполняет ВСЮ карточку (обрезаясь по краям, если формат
-            // не совпадает), а не вписывается целиком с полосами по бокам
-            // (дефолтное поведение Lottie — 'meet', как object-fit: contain).
-            preserveAspectRatio: 'xMidYMid slice',
+            // 'meet' — тот же эффект, что object-fit: contain у обычной <img>:
+            // анимация вписывается в карточку целиком, без обрезки по краям
+            // (раньше был 'slice' — как object-fit: cover, из-за чего у
+            // многих подарков верх/низ анимации обрезались).
+            preserveAspectRatio: 'xMidYMid meet',
         },
     });
 
