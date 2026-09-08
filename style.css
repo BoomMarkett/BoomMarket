@@ -1185,7 +1185,7 @@ body {
 .listing-detail-image-wrap {
     width: 75%;
     max-width: 220px;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 4 / 5;
     margin: 0 auto;
     border-radius: 16px;
     overflow: hidden;
