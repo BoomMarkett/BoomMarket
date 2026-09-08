@@ -1183,8 +1183,10 @@ body {
 }
 
 .listing-detail-image-wrap {
-    width: 100%;
+    width: 75%;
+    max-width: 220px;
     aspect-ratio: 1 / 1;
+    margin: 0 auto;
     border-radius: 16px;
     overflow: hidden;
     background: #333;
