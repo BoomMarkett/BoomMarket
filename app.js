@@ -362,6 +362,56 @@ if (adminUserSearchInput) {
     });
 }
 
+// === Тестовое пополнение собственного баланса (только админ) ===
+const adminTopupInput = document.getElementById('adminTopupInput');
+const adminTopupBtn = document.getElementById('adminTopupBtn');
+
+async function runAdminTopup() {
+    if (!authToken || !adminTopupInput) return;
+
+    const amount = parseFloat(adminTopupInput.value);
+    if (!amount || amount <= 0) {
+        alert('Укажите положительную сумму');
+        return;
+    }
+
+    adminTopupBtn.disabled = true;
+
+    try {
+        const res = await fetch(`${API_URL}/api/admin/topup`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`,
+            },
+            body: JSON.stringify({ amount }),
+        });
+        const data = await res.json();
+
+        if (!data.ok) {
+            alert(data.error || 'Не удалось пополнить баланс');
+            return;
+        }
+
+        updateBalanceUI(data.balance);
+        adminTopupInput.value = '';
+    } catch (e) {
+        console.error('Не удалось пополнить баланс:', e);
+        alert('Ошибка соединения с сервером');
+    } finally {
+        adminTopupBtn.disabled = false;
+    }
+}
+
+if (adminTopupBtn) {
+    adminTopupBtn.addEventListener('click', runAdminTopup);
+}
+if (adminTopupInput) {
+    adminTopupInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') runAdminTopup();
+    });
+}
+
 async function loadAdminStats() {
     if (!authToken) return;
     const grid = document.getElementById('adminStatsGrid');

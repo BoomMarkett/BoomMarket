@@ -1162,6 +1162,12 @@
             </div>
             <div id="adminUserResult" class="admin-user-result" style="display:none;"></div>
 
+            <!-- Тестовое пополнение собственного баланса — в обход реального TON-депозита -->
+            <div class="admin-user-search">
+                <input type="number" id="adminTopupInput" placeholder="Сумма 💎" min="0.01" step="0.01">
+                <button class="action-btn admin-user-search-btn" id="adminTopupBtn">Пополнить (тест)</button>
+            </div>
+
             <div class="admin-stats-grid" id="adminStatsGrid">
                 <div class="admin-stat-card">
                     <div class="admin-stat-icon">🟢</div>
