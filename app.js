@@ -1372,10 +1372,13 @@ const listingDetailImage = document.getElementById('listingDetailImage');
 const listingDetailAnimMount = document.getElementById('listingDetailAnimMount');
 const listingDetailTitle = document.getElementById('listingDetailTitle');
 const listingDetailNumber = document.getElementById('listingDetailNumber');
-const listingDetailCollection = document.getElementById('listingDetailCollection');
+const listingDetailOwner = document.getElementById('listingDetailOwner');
 const listingDetailModel = document.getElementById('listingDetailModel');
+const listingDetailModelRarity = document.getElementById('listingDetailModelRarity');
 const listingDetailBackdrop = document.getElementById('listingDetailBackdrop');
+const listingDetailBackdropRarity = document.getElementById('listingDetailBackdropRarity');
 const listingDetailSymbol = document.getElementById('listingDetailSymbol');
+const listingDetailSymbolRarity = document.getElementById('listingDetailSymbolRarity');
 const listingDetailPrice = document.getElementById('listingDetailPrice');
 const listingDetailBuyBtn = document.getElementById('listingDetailBuyBtn');
 const listingDetailCancelBtn = document.getElementById('listingDetailCancelBtn');
@@ -1393,6 +1396,20 @@ function traitLabel(name) {
     return name || '—';
 }
 
+/** rarity_permille (доля из 1000, напр. 30 = 3%) → "3%"/"0.2%", как в самом
+ * Telegram — без лишних нулей после запятой. */
+function formatRarityPercent(permille) {
+    if (permille === null || permille === undefined) return '';
+    const percent = Math.round(permille / 10 * 10) / 10;
+    return `${percent % 1 === 0 ? percent.toFixed(0) : percent.toFixed(1)}%`;
+}
+
+function ownerDisplayName(item) {
+    if (item.owner_first_name) return item.owner_first_name;
+    if (item.owner_username) return `@${item.owner_username}`;
+    return '—';
+}
+
 function openListingDetail(item, opts = {}) {
     currentDetailListingId = item.id;
     currentDetailOffer = opts.offer || null;
@@ -1404,12 +1421,15 @@ function openListingDetail(item, opts = {}) {
     const image = item.model_icon || item.model_image || item.collection_image || '';
     listingDetailImageWrap.style.backgroundColor = item.backdrop_color || '#333';
     setGiftDetailVisual(listingDetailImage, listingDetailAnimMount, item, image);
-    listingDetailTitle.textContent = item.collection_name;
-    listingDetailNumber.textContent = `#${item.gift_number}`;
-    listingDetailCollection.textContent = item.collection_name;
+    listingDetailTitle.textContent = `${item.collection_name} #${item.gift_number}`;
+    listingDetailNumber.textContent = traitLabel(item.model_name);
+    listingDetailOwner.textContent = ownerDisplayName(item);
     listingDetailModel.textContent = traitLabel(item.model_name);
+    listingDetailModelRarity.textContent = formatRarityPercent(item.model_rarity);
     listingDetailBackdrop.textContent = traitLabel(item.backdrop_name);
+    listingDetailBackdropRarity.textContent = formatRarityPercent(item.backdrop_rarity);
     listingDetailSymbol.textContent = traitLabel(item.symbol_name);
+    listingDetailSymbolRarity.textContent = formatRarityPercent(item.symbol_rarity);
     listingDetailPrice.textContent = formatGram(item.price);
 
     if (currentDetailOffer) {
@@ -3968,10 +3988,13 @@ const relistImage = document.getElementById('relistImage');
 const relistAnimMount = document.getElementById('relistAnimMount');
 const relistTitle = document.getElementById('relistTitle');
 const relistNumber = document.getElementById('relistNumber');
-const relistCollection = document.getElementById('relistCollection');
+const relistOwner = document.getElementById('relistOwner');
 const relistModel = document.getElementById('relistModel');
+const relistModelRarity = document.getElementById('relistModelRarity');
 const relistBackdrop = document.getElementById('relistBackdrop');
+const relistBackdropRarity = document.getElementById('relistBackdropRarity');
 const relistSymbol = document.getElementById('relistSymbol');
+const relistSymbolRarity = document.getElementById('relistSymbolRarity');
 const relistPriceInput = document.getElementById('relistPrice');
 const relistConfirmBtn = document.getElementById('relistConfirmBtn');
 
@@ -3983,12 +4006,18 @@ function openRelistModal(item) {
     const image = item.model_icon || item.collection_image || '';
     relistImageWrap.style.backgroundColor = item.backdrop_color || '#333';
     setGiftDetailVisual(relistImage, relistAnimMount, item, image);
-    relistTitle.textContent = item.collection_name;
-    relistNumber.textContent = `#${item.gift_number}`;
-    relistCollection.textContent = item.collection_name;
+    relistTitle.textContent = `${item.collection_name} #${item.gift_number}`;
+    relistNumber.textContent = traitLabel(item.model_name);
+    // Товары в Хранилище всегда принадлежат текущему пользователю — берём
+    // его же имя из Telegram, отдельного запроса на владельца тут не нужно.
+    const me = tg?.initDataUnsafe?.user;
+    relistOwner.textContent = (me && (me.first_name || (me.username ? `@${me.username}` : null))) || '—';
     relistModel.textContent = traitLabel(item.model_name);
+    relistModelRarity.textContent = formatRarityPercent(item.model_rarity);
     relistBackdrop.textContent = traitLabel(item.backdrop_name);
+    relistBackdropRarity.textContent = formatRarityPercent(item.backdrop_rarity);
     relistSymbol.textContent = traitLabel(item.symbol_name);
+    relistSymbolRarity.textContent = formatRarityPercent(item.symbol_rarity);
     relistPriceInput.value = '';
 
     relistModal.style.display = 'flex';

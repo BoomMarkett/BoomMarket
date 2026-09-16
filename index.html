@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Telegram NFT Market</title>
-    <link rel="stylesheet" href="style.css?v=31">
+    <link rel="stylesheet" href="style.css?v=32">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 <script src="https://unpkg.com/tonweb@0.0.66/dist/tonweb.js"></script>
@@ -1411,25 +1411,37 @@
             <div class="listing-detail-image-wrap" id="relistImageWrap">
                 <img id="relistImage" class="listing-detail-image" src="" alt="">
                 <div class="nft-anim-mount" id="relistAnimMount"></div>
+                <div class="listing-detail-image-scrim"></div>
+                <div class="listing-detail-image-caption">
+                    <div class="listing-detail-title" id="relistTitle"></div>
+                    <div class="listing-detail-number" id="relistNumber"></div>
+                </div>
             </div>
-            <div class="listing-detail-title" id="relistTitle"></div>
-            <div class="listing-detail-number" id="relistNumber"></div>
 
             <div class="listing-detail-row">
-                <span class="listing-detail-label">Коллекция</span>
-                <span class="listing-detail-value" id="relistCollection"></span>
+                <span class="listing-detail-label">Владелец</span>
+                <span class="listing-detail-value listing-detail-owner" id="relistOwner"></span>
             </div>
             <div class="listing-detail-row">
                 <span class="listing-detail-label">Модель</span>
-                <span class="listing-detail-value" id="relistModel"></span>
+                <span class="listing-detail-value">
+                    <span id="relistModel"></span>
+                    <span class="trait-rarity-badge" id="relistModelRarity"></span>
+                </span>
+            </div>
+            <div class="listing-detail-row">
+                <span class="listing-detail-label">Узор</span>
+                <span class="listing-detail-value">
+                    <span id="relistSymbol"></span>
+                    <span class="trait-rarity-badge" id="relistSymbolRarity"></span>
+                </span>
             </div>
             <div class="listing-detail-row">
                 <span class="listing-detail-label">Фон</span>
-                <span class="listing-detail-value" id="relistBackdrop"></span>
-            </div>
-            <div class="listing-detail-row">
-                <span class="listing-detail-label">Символ</span>
-                <span class="listing-detail-value" id="relistSymbol"></span>
+                <span class="listing-detail-value">
+                    <span id="relistBackdrop"></span>
+                    <span class="trait-rarity-badge" id="relistBackdropRarity"></span>
+                </span>
             </div>
 
             <div class="withdraw-input-box">
@@ -1769,25 +1781,37 @@
             <div class="listing-detail-image-wrap" id="listingDetailImageWrap">
                 <img id="listingDetailImage" class="listing-detail-image" src="" alt="">
                 <div class="nft-anim-mount" id="listingDetailAnimMount"></div>
+                <div class="listing-detail-image-scrim"></div>
+                <div class="listing-detail-image-caption">
+                    <div class="listing-detail-title" id="listingDetailTitle"></div>
+                    <div class="listing-detail-number" id="listingDetailNumber"></div>
+                </div>
             </div>
-            <div class="listing-detail-title" id="listingDetailTitle"></div>
-            <div class="listing-detail-number" id="listingDetailNumber"></div>
 
             <div class="listing-detail-row">
-                <span class="listing-detail-label">Коллекция</span>
-                <span class="listing-detail-value" id="listingDetailCollection"></span>
+                <span class="listing-detail-label">Владелец</span>
+                <span class="listing-detail-value listing-detail-owner" id="listingDetailOwner"></span>
             </div>
             <div class="listing-detail-row">
                 <span class="listing-detail-label">Модель</span>
-                <span class="listing-detail-value" id="listingDetailModel"></span>
+                <span class="listing-detail-value">
+                    <span id="listingDetailModel"></span>
+                    <span class="trait-rarity-badge" id="listingDetailModelRarity"></span>
+                </span>
+            </div>
+            <div class="listing-detail-row">
+                <span class="listing-detail-label">Узор</span>
+                <span class="listing-detail-value">
+                    <span id="listingDetailSymbol"></span>
+                    <span class="trait-rarity-badge" id="listingDetailSymbolRarity"></span>
+                </span>
             </div>
             <div class="listing-detail-row">
                 <span class="listing-detail-label">Фон</span>
-                <span class="listing-detail-value" id="listingDetailBackdrop"></span>
-            </div>
-            <div class="listing-detail-row">
-                <span class="listing-detail-label">Символ</span>
-                <span class="listing-detail-value" id="listingDetailSymbol"></span>
+                <span class="listing-detail-value">
+                    <span id="listingDetailBackdrop"></span>
+                    <span class="trait-rarity-badge" id="listingDetailBackdropRarity"></span>
+                </span>
             </div>
 
             <button class="action-btn listing-detail-buy" id="listingDetailBuyBtn">
@@ -1849,6 +1873,6 @@
     </div>
 
     <!-- Скрипт подключаем один раз в самом конце -->
-    <script src="app.js?v=29"></script>
+    <script src="app.js?v=30"></script>
 </body>
 </html>
