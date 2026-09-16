@@ -1162,6 +1162,30 @@
             </div>
             <div id="adminUserResult" class="admin-user-result" style="display:none;"></div>
 
+            <!-- Добавить любой виртуальный подарок напрямую в чьё-то хранилище (тест) -->
+            <div class="admin-user-section-title">Добавить виртуальный подарок</div>
+            <div class="admin-user-result" style="display:block;">
+                <input type="text" id="adminGiftUsernameInput" placeholder="Username получателя (пусто = себе)" class="admin-gift-input">
+
+                <select id="adminGiftCollectionSelect" class="dropdown-filter listing-select">
+                    <option value="">Выберите коллекцию</option>
+                </select>
+                <select id="adminGiftModelSelect" class="dropdown-filter listing-select" disabled>
+                    <option value="">Сначала выберите коллекцию</option>
+                </select>
+                <select id="adminGiftBackdropSelect" class="dropdown-filter listing-select" disabled>
+                    <option value="">Сначала выберите коллекцию</option>
+                </select>
+                <select id="adminGiftSymbolSelect" class="dropdown-filter listing-select" disabled>
+                    <option value="">Сначала выберите коллекцию</option>
+                </select>
+
+                <input type="number" id="adminGiftNumberInput" placeholder="Номер подарка (напр. 12345)" min="1" step="1" class="admin-gift-input">
+                <input type="number" id="adminGiftPriceInput" placeholder="Оценочная цена 💎 (необязательно)" min="0" step="0.01" class="admin-gift-input">
+
+                <button class="action-btn" id="adminGiftAddBtn">Добавить подарок</button>
+            </div>
+
             <div class="admin-stats-grid" id="adminStatsGrid">
                 <div class="admin-stat-card">
                     <div class="admin-stat-icon">🟢</div>

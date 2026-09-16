@@ -247,7 +247,12 @@ if (ordersStatCard) {
 // умолчанию; показывается только своему (см. authenticateWithBackend).
 const adminPanelBtn = document.getElementById('adminPanelBtn');
 if (adminPanelBtn) {
-    adminPanelBtn.addEventListener('click', () => showScreen('admin'));
+    adminPanelBtn.addEventListener('click', () => {
+        showScreen('admin');
+        loadAdminStats();
+        loadAdminRevenue();
+        if (typeof populateAdminGiftCollectionSelect === 'function') populateAdminGiftCollectionSelect();
+    });
 }
 const adminBackBtn = document.getElementById('adminBackBtn');
 if (adminBackBtn) {
@@ -360,6 +365,138 @@ if (adminUserSearchInput) {
     adminUserSearchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') runAdminUserSearch();
     });
+}
+
+// === Добавить виртуальный подарок в чьё-то хранилище (только админ) ===
+const adminGiftUsernameInput = document.getElementById('adminGiftUsernameInput');
+const adminGiftCollectionSelect = document.getElementById('adminGiftCollectionSelect');
+const adminGiftModelSelect = document.getElementById('adminGiftModelSelect');
+const adminGiftBackdropSelect = document.getElementById('adminGiftBackdropSelect');
+const adminGiftSymbolSelect = document.getElementById('adminGiftSymbolSelect');
+const adminGiftNumberInput = document.getElementById('adminGiftNumberInput');
+const adminGiftPriceInput = document.getElementById('adminGiftPriceInput');
+const adminGiftAddBtn = document.getElementById('adminGiftAddBtn');
+
+let adminGiftTraitsCache = { models: [], backdrops: [], symbols: [] };
+
+async function populateAdminGiftCollectionSelect() {
+    if (!adminGiftCollectionSelect) return;
+    // collectionsCache уже загружен маркетом при старте — переиспользуем.
+    adminGiftCollectionSelect.innerHTML = '<option value="">Выберите коллекцию</option>';
+    collectionsCache.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name;
+        adminGiftCollectionSelect.appendChild(opt);
+    });
+}
+
+if (adminGiftCollectionSelect) {
+    // Коллекции могут ещё не подгрузиться на момент первого рендера — заполним
+    // сразу, а при открытии экрана админки actio перезагрузим на всякий случай.
+    populateAdminGiftCollectionSelect();
+
+    adminGiftCollectionSelect.addEventListener('change', async () => {
+        const collectionId = adminGiftCollectionSelect.value;
+
+        if (!collectionId) {
+            adminGiftModelSelect.innerHTML = '<option value="">Сначала выберите коллекцию</option>';
+            adminGiftBackdropSelect.innerHTML = '<option value="">Сначала выберите коллекцию</option>';
+            adminGiftSymbolSelect.innerHTML = '<option value="">Сначала выберите коллекцию</option>';
+            adminGiftModelSelect.disabled = true;
+            adminGiftBackdropSelect.disabled = true;
+            adminGiftSymbolSelect.disabled = true;
+            return;
+        }
+
+        adminGiftModelSelect.innerHTML = '<option value="">Загрузка...</option>';
+        adminGiftBackdropSelect.innerHTML = '<option value="">Загрузка...</option>';
+        adminGiftSymbolSelect.innerHTML = '<option value="">Загрузка...</option>';
+
+        try {
+            const res = await fetch(`${API_URL}/api/collections/${collectionId}/filters`);
+            const data = await res.json();
+            if (!data.ok) throw new Error(data.error || 'Не удалось загрузить трейты');
+
+            adminGiftTraitsCache = data.filters;
+
+            fillListingSelect(adminGiftModelSelect, adminGiftTraitsCache.models, 'Без модели', m =>
+                m.rarity_permille != null ? `${m.name} (${m.rarity_permille}%)` : m.name);
+            fillListingSelect(adminGiftBackdropSelect, adminGiftTraitsCache.backdrops, 'Без фона', b =>
+                b.rarity_permille != null ? `${b.name} (${b.rarity_permille}%)` : b.name);
+            fillListingSelect(adminGiftSymbolSelect, adminGiftTraitsCache.symbols, 'Без символа', s =>
+                s.rarity_permille != null ? `${s.name} (${s.rarity_permille}%)` : s.name);
+        } catch (e) {
+            console.error('Не удалось загрузить трейты коллекции:', e);
+            adminGiftModelSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+            adminGiftBackdropSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+            adminGiftSymbolSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+        }
+    });
+}
+
+async function runAdminGiftAdd() {
+    if (!authToken) return;
+
+    const collectionId = adminGiftCollectionSelect.value;
+    const giftNumber = adminGiftNumberInput.value;
+
+    if (!collectionId) {
+        alert('Выберите коллекцию');
+        return;
+    }
+    if (!giftNumber) {
+        alert('Укажите номер подарка');
+        return;
+    }
+
+    adminGiftAddBtn.disabled = true;
+
+    try {
+        const res = await fetch(`${API_URL}/api/admin/gift/add`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`,
+            },
+            body: JSON.stringify({
+                username: adminGiftUsernameInput.value.trim() || undefined,
+                collectionId,
+                modelId: adminGiftModelSelect.value || undefined,
+                backdropId: adminGiftBackdropSelect.value || undefined,
+                symbolId: adminGiftSymbolSelect.value || undefined,
+                giftNumber,
+                price: adminGiftPriceInput.value || 0,
+            }),
+        });
+        const data = await res.json();
+
+        if (!data.ok) {
+            alert(data.error || 'Не удалось добавить подарок');
+            return;
+        }
+
+        alert('Подарок добавлен в хранилище!');
+        adminGiftUsernameInput.value = '';
+        adminGiftCollectionSelect.value = '';
+        adminGiftModelSelect.innerHTML = '<option value="">Сначала выберите коллекцию</option>';
+        adminGiftBackdropSelect.innerHTML = '<option value="">Сначала выберите коллекцию</option>';
+        adminGiftSymbolSelect.innerHTML = '<option value="">Сначала выберите коллекцию</option>';
+        adminGiftModelSelect.disabled = true;
+        adminGiftBackdropSelect.disabled = true;
+        adminGiftSymbolSelect.disabled = true;
+        adminGiftNumberInput.value = '';
+        adminGiftPriceInput.value = '';
+    } catch (e) {
+        console.error('Не удалось добавить подарок:', e);
+        alert('Ошибка соединения с сервером');
+    } finally {
+        adminGiftAddBtn.disabled = false;
+    }
+}
+
+if (adminGiftAddBtn) {
+    adminGiftAddBtn.addEventListener('click', runAdminGiftAdd);
 }
 
 async function loadAdminStats() {
